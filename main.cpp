@@ -1,9 +1,11 @@
 #include <stdio.h>
+#include <iostream>
 
 #include "pico/stdlib.h"
 #include "hardware/gpio.h"
 #include "pico/cyw43_arch.h"
 #include "secrets.hpp"
+#include "sensor/dht22.hpp"
 
 char ssid[] = SSID;
 char pass[] = WPA_PASS;
@@ -29,13 +31,18 @@ bool connect_wifi(char* ssid, char* pass) {
 }
 
 
-
 int main()
 {
+
+    Dht22 dht_sensor = Dht22("pico_dev");
+
     stdio_init_all();
 
-    if (!connect_wifi(ssid, pass)) {
-        return 1;
+    uint delay_backoff = 1000;
+    while (!connect_wifi(ssid, pass)) {
+        std::cout << "Failed to connect to wifi. Trying again in " << delay_backoff/1000 << "seconds" << std::endl;
+        sleep_ms(delay_backoff);
+        delay_backoff += 10000;
     }
     
     int ticks = 0;
@@ -45,6 +52,8 @@ int main()
     {
         sleep_ms(1000);
         printf("Ticks: {%d}\r\n", ticks);
+        dht_sensor.measure();
+        std::cout << dht_sensor.to_payload() << "\n";
         ticks++;
         sleep_ms(1000);
     }

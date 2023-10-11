@@ -1,14 +1,17 @@
-#pragma once
+#ifndef DATAPOINT_HPP 
+#define DATAPOINT_HPP
 
 #include <string>
+#include <iostream>
+#include <sstream>
 
 class Datapoint {
     public:
         Datapoint(std::string _entity, float _value) : entity(_entity), value(_value) {};
-        // virtual ~Datapoint(); TODO: Do I need this?
-        std::string to_line();
-
+        std::string to_line() const;
     private:
         const std::string entity;
         const float value;
 };
+
+#endif

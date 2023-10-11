@@ -1,6 +1,10 @@
 #include "sensor.hpp"
 
-std::string Sensor::to_payload() {
-    // TODO implement
-    return "name,host=host measurement.to_line(), for all measurements";
+std::string Sensor::to_payload() const {
+
+    std::ostringstream os;
+    for (const auto& measurement: measurements) {
+        os << name << "," << "host=" << host << " " << measurement.to_line() << "\n";
+    }
+    return os.str();
 }
