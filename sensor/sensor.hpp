@@ -15,7 +15,7 @@ class Sensor {
     protected:
         const std::string name;
         const std::string host;
-        std::list<Measurement> measurements;
+        std::list<Measurement> measurements; //OOM happens at roughly 500 elements. TODO: Bound this, use a ring-buffer so that we can write forever.
 };
 
 #endif

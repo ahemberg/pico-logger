@@ -12,5 +12,5 @@ set(FILES
 
 add_library(sensor INTERFACE)
 target_include_directories(sensor INTERFACE ${CMAKE_CURRENT_LIST_DIR})
-target_link_libraries(sensor INTERFACE pico_stdlib)
+target_link_libraries(sensor INTERFACE pico_stdlib hardware_rtc)
 target_sources(sensor INTERFACE ${FILES})
