@@ -2,6 +2,8 @@
 set(FILES
    ${CMAKE_CURRENT_SOURCE_DIR}/ntp.cpp
    ${CMAKE_CURRENT_SOURCE_DIR}/ntp.hpp
+   ${CMAKE_CURRENT_SOURCE_DIR}/timeutils.cpp
+   ${CMAKE_CURRENT_SOURCE_DIR}/timeutils.hpp
 )
 
 add_library(network INTERFACE)

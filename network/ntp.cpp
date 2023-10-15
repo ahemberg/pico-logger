@@ -2,12 +2,9 @@
 
 // Called with results of operation
 static void ntp_result(NTP_T* state, int status, time_t *result) {
-    if (status == 0 && result) {
-        struct tm *utc = gmtime(result);
-        datetime_t t = time_to_datetime(result);   
-        rtc_set_datetime(&t);
+    if (status == 0 && result) {        
         state->request_successful = true;
-        busy_wait_us(64);
+        state->result = result;
     } else {
         state->request_successful = false;
     }
@@ -100,35 +97,12 @@ NTP_T* ntp_init(void) {
 }
 
 
-static datetime_t time_to_datetime(time_t *t) {
-    struct tm *tm_time;
-
-    tm_time = gmtime(t);
-
-    datetime_t time;
-    time.year = tm_time->tm_year + 1900;
-    time.month = tm_time->tm_mon + 1;
-    time.dotw = tm_time->tm_wday;
-    time.day = tm_time->tm_mday;
-    time.hour = tm_time->tm_hour;
-    time.min = tm_time->tm_min;
-    time.sec = tm_time->tm_sec;
-    return time;
-}
-
-
-/**
- * Blocking method that updates the internal RTC with current time from internet.
- */
-bool update_rtc() {
+//Queries NTP. Operation is Async.
+NTP_T* query_ntp() {
     NTP_T *state = ntp_init();
 
-    if (!rtc_running()) {
-        rtc_init();
-    }
-
     if (!state) {
-        return false;
+        return state;
     }
 
     if (absolute_time_diff_us(get_absolute_time(), state->ntp_test_time) < 0 && !state->dns_request_sent) {
@@ -152,18 +126,5 @@ bool update_rtc() {
         }
     }
 
-    while(state->dns_request_sent) {
-        //Waiting for response
-    }
-
-    if (!state->request_successful) {
-        std::cout << "Updating RTC failed!" << std::endl;
-        return false;
-    }
-
-    // Clear state
-    udp_remove(state->ntp_pcb);
-
-    std::cout << "Updating RTC successful!" << std::endl;
-    return true;
+    return state;
 }

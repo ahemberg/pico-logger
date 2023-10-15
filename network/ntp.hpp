@@ -6,15 +6,8 @@
 #ifndef NTP_HPP
 #define NTP_HPP
 
-#include <stdio.h>
-#include <string.h>
-#include <iostream>
-#include <time.h>
-
-#include "hardware/rtc.h"
 #include "pico/stdlib.h"
 #include "pico/cyw43_arch.h"
-#include "pico/util/datetime.h"
 
 #include "lwip/dns.h"
 #include "lwip/pbuf.h"
@@ -27,6 +20,8 @@ typedef struct NTP_T_ {
     struct udp_pcb *ntp_pcb;
     absolute_time_t ntp_test_time;
     alarm_id_t ntp_resend_alarm;
+    time_t *result;
+
 } NTP_T;
 
 #define NTP_SERVER "pool.ntp.org"
@@ -53,12 +48,9 @@ static void ntp_dns_found(const char *hostname, const ip_addr_t *ipaddr, void *a
 static void ntp_recv(void *arg, struct udp_pcb *pcb, struct pbuf *p, const ip_addr_t *addr, u16_t port);
 
 // Perform initialisation
-NTP_T* ntp_init(void);
+static NTP_T* ntp_init(void);
 
-// Converts time_t to pico datetime_t
-static datetime_t time_to_datetime(time_t *t);
-
-// Blocks until internal RTC is updated or ntp call fails. Returns true if successful
-bool update_rtc();
+// Query NTP
+NTP_T* query_ntp();
 
 #endif
