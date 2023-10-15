@@ -21,6 +21,7 @@
     "cortex-debug.variableUseNaturalFormat": true,
     "C_Cpp.default.compilerPath": "/usr/bin/arm-none-eabi-gcc",
     "files.associations": {
-        "list": "cpp"
+        "list": "cpp",
+        "iostream": "cpp"
     }
 }

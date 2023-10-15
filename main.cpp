@@ -69,6 +69,29 @@ bool connect_wifi(char* ssid, char* pass) {
     return true;
 }
 
+void disconnect_wifi() {
+    void cyw43_arch_disable_sta_mode();
+    cyw43_arch_deinit();
+}
+
+void block_until_wifi_connected(char* ssid, char* pass) {
+    uint delay_backoff = 1000;
+    while (!connect_wifi(ssid, pass)) {
+        std::cout << "Failed toconnect to Wifi. Will retry in " << delay_backoff/1000 << " seconds" << std::endl;
+        sleep_ms(delay_backoff);
+        delay_backoff += 10000;
+    }
+}
+
+// TODO will block forever if wifi not connected when called.
+void block_until_rtc_updated() {
+    uint delay_backoff = 1;
+    while (!update_rtc()) {
+        std::cout << "Failed to update RTC. Will retry in " << delay_backoff/1000 << " seconds" << std::endl;
+        sleep_ms(delay_backoff);
+        delay_backoff += 10000;
+    }
+}
 
 // static bool awake;
 
@@ -124,22 +147,16 @@ int main()
     uint clock1_orig = clocks_hw->sleep_en1;
     
     // RTC needed to keep track of time
+
+    //Connect WIFI
+    block_until_wifi_connected(ssid, pass);
+    
+    //Update rtc with current time
     rtc_init();
-
-    uint delay_backoff = 1000;
-    while (!connect_wifi(ssid, pass)) {
-        std::cout << "Failed toconnect to Wifi. Will retry in " << delay_backoff/1000 << " seconds" << std::endl;
-        sleep_ms(delay_backoff);
-        delay_backoff += 10000;
-    }
-
-    //Set RTC. Todo run this periodically.
-    delay_backoff = 1;
-    while (!update_rtc()) {
-        std::cout << "Failed to update RTC. Will retry in " << delay_backoff/1000 << " seconds" << std::endl;
-        sleep_ms(delay_backoff);
-        delay_backoff += 10000;
-    }
+    block_until_rtc_updated();
+    
+    //Disconnect wifi
+    disconnect_wifi();
 
 
     int ticks = 0;
@@ -161,5 +178,18 @@ int main()
         //recover_from_sleep(scb_orig, clock0_orig, clock1_orig);
         //std::cout << "Awake!" << std::endl;
         sleep_ms(1000);
+
+        if (ticks == 10) {
+            ticks = 0;
+            //Connect WIFI
+            block_until_wifi_connected(ssid, pass);
+    
+            //Update rtc with current time
+            rtc_init();
+            block_until_rtc_updated();
+
+            //Disconnect wifi
+            disconnect_wifi();
+        }
     }
 }

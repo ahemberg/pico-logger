@@ -160,6 +160,10 @@ bool update_rtc() {
         std::cout << "Updating RTC failed!" << std::endl;
         return false;
     }
+
+    // Clear state
+    udp_remove(state->ntp_pcb);
+
     std::cout << "Updating RTC successful!" << std::endl;
     return true;
 }
