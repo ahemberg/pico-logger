@@ -20,8 +20,7 @@ typedef struct NTP_T_ {
     struct udp_pcb *ntp_pcb;
     absolute_time_t ntp_test_time;
     alarm_id_t ntp_resend_alarm;
-    time_t *result;
-
+    time_t epoch;
 } NTP_T;
 
 #define NTP_SERVER "pool.ntp.org"
@@ -32,7 +31,7 @@ typedef struct NTP_T_ {
 #define NTP_RESEND_TIME (10 * 1000)
 
 // Called with results of operation
-static void ntp_result(NTP_T* state, int status, time_t *result);
+static void ntp_result(NTP_T* state, int status);
 
 static int64_t ntp_failed_handler(alarm_id_t id, void *user_data);
 

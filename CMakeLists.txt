@@ -20,14 +20,18 @@ add_subdirectory( sensor )
 include_directories( "network" ) 
 add_subdirectory( network )
 
+include_directories( "tls" ) 
+add_subdirectory( tls )
+
 target_include_directories(main PRIVATE ${CMAKE_CURRENT_LIST_DIR} )
 
 target_link_libraries(main 
     pico_stdlib
-    pico_cyw43_arch_lwip_threadsafe_background
+    pico_cyw43_arch_lwip_poll
     hardware_rtc
     pico_runtime 
     hardware_sleep
     sensor
     network
+    tls
 )

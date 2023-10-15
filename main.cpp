@@ -8,6 +8,7 @@
 #include "secrets.hpp"
 #include "sensor/dht22.hpp"
 #include "network/timeutils.hpp"
+#include "tls/influxclient.hpp"
 
 
 char ssid[] = SSID;
@@ -100,6 +101,13 @@ int main()
             //Update rtc with current time
             rtc_init();
             block_until_rtc_updated();
+
+            //Send data
+            if (post_to_influx("https://alehem.eu:8086", "pico_dev" , "pico-dev", "123456", dht_sensor.to_payload())) {
+                std::cout << "Sending data success!" << std::endl;
+            } else {
+                std::cout << "Failed to send data!" << std::endl;
+            }
 
             //Disconnect wifi
             disconnect_wifi();

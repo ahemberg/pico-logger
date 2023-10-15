@@ -1,10 +1,10 @@
 #include "timeutils.hpp"
 
 
-datetime_t time_to_datetime(time_t *t) {
+datetime_t time_to_datetime(time_t t) {
     struct tm *tm_time;
 
-    tm_time = gmtime(t);
+    tm_time = gmtime(&t);
 
     datetime_t time;
     time.year = tm_time->tm_year + 1900;
@@ -60,9 +60,11 @@ bool update_rtc_from_ntp() {
     NTP_T *state = query_ntp();
 
     while(state->dns_request_sent) {
-        //Waiting for response
+        //Waiting for response, poll 
         std::cout << "Waiting for NTP..." << std::endl;
-        sleep_ms(1000);
+        cyw43_arch_wait_for_work_until(at_the_end_of_time);
+        cyw43_arch_poll();
+        //sleep_ms(1000);
     }
 
     if (!state->request_successful) {
@@ -74,7 +76,7 @@ bool update_rtc_from_ntp() {
     udp_remove(state->ntp_pcb);
 
     std::cout << "Updating RTC successful!" << std::endl;
-    datetime_t t = time_to_datetime(state->result);   
+    datetime_t t = time_to_datetime(state->epoch);   
     rtc_set_datetime(&t);
     sleep_us(64);
     return true;
