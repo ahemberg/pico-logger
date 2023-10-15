@@ -7,7 +7,7 @@ static void ntp_result(NTP_T* state, int status, time_t *result) {
         datetime_t t = time_to_datetime(result);   
         rtc_set_datetime(&t);
         state->request_successful = true;
-        sleep_us(64); //Should sleep here
+        busy_wait_us(64);
     } else {
         state->request_successful = false;
     }
@@ -108,6 +108,7 @@ static datetime_t time_to_datetime(time_t *t) {
     datetime_t time;
     time.year = tm_time->tm_year + 1900;
     time.month = tm_time->tm_mon + 1;
+    time.dotw = tm_time->tm_wday;
     time.day = tm_time->tm_mday;
     time.hour = tm_time->tm_hour;
     time.min = tm_time->tm_min;

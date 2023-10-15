@@ -52,6 +52,7 @@ bool connect_wifi(char* ssid, char* pass) {
  if (cyw43_arch_init_with_country(CYW43_COUNTRY_UK))
     {
         printf("failed initialize\n");
+        cyw43_arch_deinit();
         return false;
     }
     printf("initialized\n");
@@ -61,6 +62,7 @@ bool connect_wifi(char* ssid, char* pass) {
     if (cyw43_arch_wifi_connect_timeout_ms(ssid, pass, CYW43_AUTH_WPA2_AES_PSK, 30000))
     {
         printf("failed to connect\n");
+        cyw43_arch_deinit();
         return false;
     }
     printf("connected\n");
@@ -124,15 +126,15 @@ int main()
     // RTC needed to keep track of time
     rtc_init();
 
-    sleep_ms(1000); //Sleep for 1 second to avoid bus errors
-    while (!connect_wifi(ssid, pass)) {
-        //TODO this tends to crash. Make the chip reset on its own.
-        std::cout << "Failed to connect to wifi. For now this is unrecoverable" << std::endl;
-        return 1;
-    }
-    
     uint delay_backoff = 1000;
+    while (!connect_wifi(ssid, pass)) {
+        std::cout << "Failed toconnect to Wifi. Will retry in " << delay_backoff/1000 << " seconds" << std::endl;
+        sleep_ms(delay_backoff);
+        delay_backoff += 10000;
+    }
+
     //Set RTC. Todo run this periodically.
+    delay_backoff = 1;
     while (!update_rtc()) {
         std::cout << "Failed to update RTC. Will retry in " << delay_backoff/1000 << " seconds" << std::endl;
         sleep_ms(delay_backoff);
