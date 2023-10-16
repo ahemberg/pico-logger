@@ -1,7 +1,8 @@
 #ifndef TLS_COMMON_H
 #define TLS_COMMON
 
-#include <string.h>
+#include <stdio.h>
+#include <string>
 #include <time.h>
 
 #include "pico/stdlib.h"
@@ -17,6 +18,7 @@ typedef struct TLS_CLIENT_T_ {
     int error;
     const char *http_request;
     int timeout;
+    std::string server_response;
 } TLS_CLIENT_T;
 
 static struct altcp_tls_config *tls_config = NULL;
@@ -31,15 +33,15 @@ static void tls_client_err(void *arg, err_t err);
 
 static err_t tls_client_recv(void *arg, struct altcp_pcb *pcb, struct pbuf *p, err_t err);
 
-static void tls_client_connect_to_server_ip(const ip_addr_t *ipaddr, TLS_CLIENT_T *state);
+static void tls_client_connect_to_server_ip(const ip_addr_t *ipaddr, uint16_t port, TLS_CLIENT_T *state);
 
 static void tls_client_dns_found(const char* hostname, const ip_addr_t *ipaddr, void *arg);
 
-static bool tls_client_open(const char *hostname, void *arg);
+static bool tls_client_open(const char *hostname, const uint16_t port, void *arg);
 
 // Perform initialisation
 static TLS_CLIENT_T* tls_client_init(void);
 
-bool run_tls_client_test(const char *server, const char *request, int timeout);
+std::string send_tls_request(std::string server, std::string request, uint16_t port, int timeout);
 
 #endif

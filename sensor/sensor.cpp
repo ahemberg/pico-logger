@@ -8,3 +8,7 @@ std::string Sensor::to_payload() const {
     }
     return os.str();
 }
+
+void Sensor::remove_all_measurements() {
+    measurements.clear();
+}

@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: BSD-3-Clause
  */
 
-#include "tls_common.h"
+#include "tls_common.hpp"
 
 static err_t tls_client_close(void *arg) {
     TLS_CLIENT_T *state = (TLS_CLIENT_T*)arg;
@@ -35,6 +35,7 @@ static err_t tls_client_connected(void *arg, struct altcp_pcb *pcb, err_t err) {
     }
 
     printf("connected to server, sending request\n");
+    printf("***\nsending to server:\n***\n\n%s\n", state->http_request);
     err = altcp_write(state->pcb, state->http_request, strlen(state->http_request), TCP_WRITE_FLAG_COPY);
     if (err != ERR_OK) {
         printf("error writing data, err=%d", err);
@@ -77,17 +78,21 @@ static err_t tls_client_recv(void *arg, struct altcp_pcb *pcb, struct pbuf *p, e
 
         printf("***\nnew data received from server:\n***\n\n%s\n", buf);
 
+        std::string server_response(buf);
+        state->server_response = server_response;
+
         altcp_recved(pcb, p->tot_len);
+        tls_client_close(state);
     }
     pbuf_free(p);
 
     return ERR_OK;
 }
 
-static void tls_client_connect_to_server_ip(const ip_addr_t *ipaddr, TLS_CLIENT_T *state)
+static void tls_client_connect_to_server_ip(const ip_addr_t *ipaddr, const uint16_t port, TLS_CLIENT_T *state)
 {
     err_t err;
-    u16_t port = 443;
+    //u16_t port = 8086; //TODO Make this a parameter!
 
     printf("connecting to server IP %s port %d\n", ipaddr_ntoa(ipaddr), port);
     err = altcp_connect(state->pcb, ipaddr, port, tls_client_connected);
@@ -103,7 +108,8 @@ static void tls_client_dns_found(const char* hostname, const ip_addr_t *ipaddr, 
     if (ipaddr)
     {
         printf("DNS resolving complete\n");
-        tls_client_connect_to_server_ip(ipaddr, (TLS_CLIENT_T *) arg);
+        //TODO this hardcoded port should be removed. Requires prot to be added to TLS_CLIENT_T
+        tls_client_connect_to_server_ip(ipaddr, 8086, (TLS_CLIENT_T *) arg);
     }
     else
     {
@@ -113,7 +119,7 @@ static void tls_client_dns_found(const char* hostname, const ip_addr_t *ipaddr, 
 }
 
 
-static bool tls_client_open(const char *hostname, void *arg) {
+static bool tls_client_open(const char *hostname, const uint16_t port, void *arg) {
     err_t err;
     ip_addr_t server_ip;
     TLS_CLIENT_T *state = (TLS_CLIENT_T*)arg;
@@ -129,8 +135,11 @@ static bool tls_client_open(const char *hostname, void *arg) {
     altcp_recv(state->pcb, tls_client_recv);
     altcp_err(state->pcb, tls_client_err);
 
+    mbedtls_ssl_context *ssl;
+    altcp_tls_context(state->pcb);
+
     /* Set SNI */
-    mbedtls_ssl_set_hostname(altcp_tls_context(state->pcb), hostname);
+    //mbedtls_ssl_set_hostname(state->pcb, hostname);
 
     printf("resolving %s\n", hostname);
 
@@ -140,11 +149,13 @@ static bool tls_client_open(const char *hostname, void *arg) {
     // case you switch the cyw43_arch type later.
     cyw43_arch_lwip_begin();
 
+    //int err = dns_gethostbyname(NTP_SERVER, &state->ntp_server_address, ntp_dns_found, state);
+    //TODO hardcoded should be server address. Fails when not replaced
     err = dns_gethostbyname(hostname, &server_ip, tls_client_dns_found, state);
     if (err == ERR_OK)
     {
         /* host is in DNS cache */
-        tls_client_connect_to_server_ip(&server_ip, state);
+        tls_client_connect_to_server_ip(&server_ip, port, state);
     }
     else if (err != ERR_INPROGRESS)
     {
@@ -159,7 +170,7 @@ static bool tls_client_open(const char *hostname, void *arg) {
 
 // Perform initialisation
 static TLS_CLIENT_T* tls_client_init(void) {
-    TLS_CLIENT_T *state = calloc(1, sizeof(TLS_CLIENT_T));
+    TLS_CLIENT_T *state = (TLS_CLIENT_T*)calloc(1, sizeof(TLS_CLIENT_T));
     if (!state) {
         printf("failed to allocate state\n");
         return NULL;
@@ -168,26 +179,28 @@ static TLS_CLIENT_T* tls_client_init(void) {
     return state;
 }
 
-bool run_tls_client_test(const char *server, const char *request, int timeout) {
+//TODO Make it return the response
+std::string send_tls_request(std::string server, std::string request, uint16_t port, int timeout) {
 
     tls_config = altcp_tls_create_config_client(NULL, 0);
     assert(tls_config);
 
     TLS_CLIENT_T *state = tls_client_init();
     if (!state) {
-        return false;
+        return NULL; //TODO better way of representing error 
     }
-    state->http_request = request;
+    state->http_request = request.c_str();
     state->timeout = timeout;
-    if (!tls_client_open(server, state)) {
-        return false;
+    if (!tls_client_open(server.c_str(), port, state)) {
+        return NULL; //TODO better way of representing error
     }
     while(!state->complete) {
         cyw43_arch_poll();
         cyw43_arch_wait_for_work_until(make_timeout_time_ms(1000));
     }
     int err = state->error;
+    std::string server_response = state->server_response;
     free(state);
     altcp_tls_free_config(tls_config);
-    return err == 0;
+    return server_response;
 }

@@ -1,8 +1,6 @@
 set(FILES
-   ${CMAKE_CURRENT_SOURCE_DIR}/influxclient.cpp
-   ${CMAKE_CURRENT_SOURCE_DIR}/influxclient.hpp
-   ${CMAKE_CURRENT_SOURCE_DIR}/tls_common.c
-   ${CMAKE_CURRENT_SOURCE_DIR}/tls_common.h
+   ${CMAKE_CURRENT_SOURCE_DIR}/tls_common.cpp
+   ${CMAKE_CURRENT_SOURCE_DIR}/tls_common.hpp
    ${CMAKE_CURRENT_SOURCE_DIR}/mbedtls_config.h
 )
 

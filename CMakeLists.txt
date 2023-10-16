@@ -23,6 +23,10 @@ add_subdirectory( network )
 include_directories( "tls" ) 
 add_subdirectory( tls )
 
+include_directories( "inflix" ) 
+add_subdirectory( influx )
+
+
 target_include_directories(main PRIVATE ${CMAKE_CURRENT_LIST_DIR} )
 
 target_link_libraries(main 
@@ -34,4 +38,5 @@ target_link_libraries(main
     sensor
     network
     tls
+    influx
 )
