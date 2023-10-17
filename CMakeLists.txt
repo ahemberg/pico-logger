@@ -4,6 +4,7 @@ include(pico_extras_import.cmake)
 project(pico-logger C CXX ASM)
 set(CMAKE_C_STANDARD 11)
 set(CMAKE_CXX_STANDARD 17)
+#set(CMAKE_BUILD_TYPE Release)
 pico_sdk_init()
 
 add_executable(main
@@ -23,7 +24,7 @@ add_subdirectory( network )
 include_directories( "tls" ) 
 add_subdirectory( tls )
 
-include_directories( "inflix" ) 
+include_directories( "influx" ) 
 add_subdirectory( influx )
 
 
