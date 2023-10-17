@@ -18,7 +18,7 @@ typedef struct TLS_CLIENT_T_ {
     int error;
     const char *http_request;
     int timeout;
-    std::string server_response;
+    std::string server_response; 
 } TLS_CLIENT_T;
 
 static struct altcp_tls_config *tls_config = NULL;

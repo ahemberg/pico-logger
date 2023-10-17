@@ -2,6 +2,7 @@
 
 #define TLS_CLIENT_TIMEOUT_SECS  30
 
+
 bool post_to_influx(std::string server_address, uint16_t port, std::string database ,std::string username, std::string password, std::string payload) {
 
     std::ostringstream os;
@@ -21,6 +22,7 @@ bool post_to_influx(std::string server_address, uint16_t port, std::string datab
 
     std::string server_response = send_tls_request(server_address, os.str(), port, TLS_CLIENT_TIMEOUT_SECS);
 
+    std::cout << "Got response" << std::endl;
     std::cout << server_response << std::endl;
 
     //Todo parse the response. Check for 204, if not fail the request for now.

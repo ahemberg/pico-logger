@@ -73,8 +73,7 @@ void block_until_rtc_updated(uint32_t timeout) {
 }
 
 
-int main()
-{
+int main() {
     Dht22 dht_sensor = Dht22("pico_dev", 15);
 
     stdio_init_all();
@@ -93,13 +92,12 @@ int main()
     
     while (true)
     {
-        //TODO for some reason only the first measurement works. Check the diff in the last commit!
         std::cout << "Ticks: " << ticks << std::endl;
         dht_sensor.measure();
         std::cout << dht_sensor.to_payload() << std::endl;
         ticks++;
 
-        if (ticks == 20) {
+        if (ticks == 5) {
             ticks = 0;
             //Connect WIFI
             block_until_wifi_connected(ssid, pass, 60000);
@@ -119,6 +117,6 @@ int main()
             disconnect_wifi();
         }
 
-        sleep_ms(60000);
+        sleep_ms(1000);
     }
 }

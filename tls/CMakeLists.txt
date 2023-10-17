@@ -1,6 +1,8 @@
 set(FILES
    ${CMAKE_CURRENT_SOURCE_DIR}/tls_common.cpp
    ${CMAKE_CURRENT_SOURCE_DIR}/tls_common.hpp
+   ${CMAKE_CURRENT_SOURCE_DIR}/http_requests.cpp
+   ${CMAKE_CURRENT_SOURCE_DIR}/http_requests.hpp
    ${CMAKE_CURRENT_SOURCE_DIR}/mbedtls_config.h
 )
 

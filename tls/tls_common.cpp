@@ -71,14 +71,35 @@ static err_t tls_client_recv(void *arg, struct altcp_pcb *pcb, struct pbuf *p, e
            and copies all the data to it in one go.
            Do be aware that the amount of data can potentially be a bit large (TLS record size can be 16 KB),
            so you may want to use a smaller fixed size buffer and copy the data to it using a loop, if memory is a concern */
-        char buf[p->tot_len + 1];
+        
 
-        pbuf_copy_partial(p, buf, p->tot_len, 0);
-        buf[p->tot_len] = 0;
+        uint32_t data_len = p->tot_len;
+        //char buf[data_len + 1];
+        uint8_t inc = 10;
+        char buf2[inc+1];
+        uint32_t cursor = 0;
+        while (cursor < data_len) {  
+            if ((cursor + inc) <= data_len) {
+                pbuf_copy_partial(p, buf2, inc, cursor);
+                buf2[inc+1] = 0;
+            } else {
+                for (uint8_t n = 0; n < inc+1; n++) {
+                    buf2[n] = 0;
+                }
+                pbuf_copy_partial(p, buf2, (data_len - cursor), cursor);
+            }
+            printf("%s", buf2);
+            cursor += inc;
+        } // Todo stream this to a string os << buf.c_str() ? Its a pointer though so it might get woonky. Otherwise set a list of strings?
 
-        printf("***\nnew data received from server:\n***\n\n%s\n", buf);
+        //TODO: THe limit for maximum failed measurements seem to be around 5. This means that the response will be corrupt otherwise
+        //Might just try to handle that.
 
-        std::string server_response(buf);
+        //pbuf_copy_partial(p, buf, p->tot_len, 0);
+        //buf[p->tot_len] = 0;
+        //printf("***\nnew data received from server:\n***\n\n%s\n", buf);
+
+        std::string server_response("buf");
         state->server_response = server_response;
 
         altcp_recved(pcb, p->tot_len);
