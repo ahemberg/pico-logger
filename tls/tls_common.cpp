@@ -66,18 +66,13 @@ static err_t tls_client_recv(void *arg, struct altcp_pcb *pcb, struct pbuf *p, e
         return tls_client_close(state);
     }
 
-    if (p->tot_len > 0) {
-        /* For simplicity this examples creates a buffer on stack the size of the data pending here, 
-           and copies all the data to it in one go.
-           Do be aware that the amount of data can potentially be a bit large (TLS record size can be 16 KB),
-           so you may want to use a smaller fixed size buffer and copy the data to it using a loop, if memory is a concern */
-        
-
+    if (p->tot_len > 0) {     
         uint32_t data_len = p->tot_len;
         //char buf[data_len + 1];
         uint8_t inc = 10;
         char buf2[inc+1];
         uint32_t cursor = 0;
+        std::ostringstream os;
         while (cursor < data_len) {  
             if ((cursor + inc) <= data_len) {
                 pbuf_copy_partial(p, buf2, inc, cursor);
@@ -88,20 +83,12 @@ static err_t tls_client_recv(void *arg, struct altcp_pcb *pcb, struct pbuf *p, e
                 }
                 pbuf_copy_partial(p, buf2, (data_len - cursor), cursor);
             }
+            os << buf2;
             printf("%s", buf2);
             cursor += inc;
-        } // Todo stream this to a string os << buf.c_str() ? Its a pointer though so it might get woonky. Otherwise set a list of strings?
+        } 
 
-        //TODO: THe limit for maximum failed measurements seem to be around 5. This means that the response will be corrupt otherwise
-        //Might just try to handle that.
-
-        //pbuf_copy_partial(p, buf, p->tot_len, 0);
-        //buf[p->tot_len] = 0;
-        //printf("***\nnew data received from server:\n***\n\n%s\n", buf);
-
-        std::string server_response("buf");
-        state->server_response = server_response;
-
+        state->server_response = os.str();
         altcp_recved(pcb, p->tot_len);
         tls_client_close(state);
     }
@@ -171,7 +158,7 @@ static bool tls_client_open(const char *hostname, const uint16_t port, void *arg
     cyw43_arch_lwip_begin();
 
     //int err = dns_gethostbyname(NTP_SERVER, &state->ntp_server_address, ntp_dns_found, state);
-    //TODO hardcoded should be server address. Fails when not replaced
+    //TODO remember to pass port into callback somehow!
     err = dns_gethostbyname(hostname, &server_ip, tls_client_dns_found, state);
     if (err == ERR_OK)
     {
@@ -200,7 +187,7 @@ static TLS_CLIENT_T* tls_client_init(void) {
     return state;
 }
 
-//TODO Make it return the response
+//TODO: This crashes if the server has influxdb off. Probably crashes if server is down too
 std::string send_tls_request(std::string server, std::string request, uint16_t port, int timeout) {
 
     tls_config = altcp_tls_create_config_client(NULL, 0);
@@ -208,11 +195,13 @@ std::string send_tls_request(std::string server, std::string request, uint16_t p
 
     TLS_CLIENT_T *state = tls_client_init();
     if (!state) {
+        std::cout << "Returning NULL. Will we crash?" << std::endl;
         return NULL; //TODO better way of representing error 
     }
     state->http_request = request.c_str();
     state->timeout = timeout;
     if (!tls_client_open(server.c_str(), port, state)) {
+        std::cout << "Returning NULL. Will we crash?" << std::endl;
         return NULL; //TODO better way of representing error
     }
     while(!state->complete) {

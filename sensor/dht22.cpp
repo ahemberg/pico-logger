@@ -1,7 +1,7 @@
 #include "dht22.hpp"
 
 void Dht22::measure() {
-    measurements.push_back(read_from_dht(pin));
+    push(read_from_dht(pin));
 }
 
 Measurement Dht22::read_from_dht(const uint dht_pin) {
