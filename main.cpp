@@ -120,7 +120,7 @@ int main()
         dht_sensor.measure(); // Todo: only works once if code compiled in release mode
         ticks++;
 
-        if (ticks == 600)
+        if (ticks == 60)
         {
             uint8_t failed_attempts = 0;
 
@@ -137,6 +137,7 @@ int main()
                 }
                 else
                 {
+                    //TODO Two failures in a row crashes the program. But only if dns resolves.
                     std::cout << "Failed to send data!" << std::endl;
                     failed_attempts++;
                 }
@@ -145,6 +146,6 @@ int main()
             disconnect_wifi();
             ticks = 0;
         }
-        sleep_ms(500);
+        sleep_ms(60000);
     }
 }
