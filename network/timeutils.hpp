@@ -16,7 +16,7 @@ time_t datetime_t_to_time_t(datetime_t t);
 time_t get_time();
 
 // Converts time_t to pico datetime_t
-datetime_t time_to_datetime(time_t *t);
+datetime_t time_to_datetime(time_t t);
 
 // Blocks until internal RTC is updated or ntp call fails. Returns true if successful
 bool update_rtc_from_ntp();

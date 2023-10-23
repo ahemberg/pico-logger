@@ -1,10 +1,9 @@
 #include "ntp.hpp"
 
 // Called with results of operation
-static void ntp_result(NTP_T* state, int status, time_t *result) {
-    if (status == 0 && result) {        
+static void ntp_result(NTP_T* state, int status) {
+    if (status == 0) {        
         state->request_successful = true;
-        state->result = result;
     } else {
         state->request_successful = false;
     }
@@ -39,7 +38,7 @@ static int64_t ntp_failed_handler(alarm_id_t id, void *user_data)
 {
     NTP_T* state = (NTP_T*)user_data;
     printf("ntp request failed\n");
-    ntp_result(state, -1, NULL);
+    ntp_result(state, -1);
     return 0;
 }
 
@@ -52,7 +51,7 @@ static void ntp_dns_found(const char *hostname, const ip_addr_t *ipaddr, void *a
         ntp_request(state);
     } else {
         printf("ntp dns request failed\n");
-        ntp_result(state, -1, NULL);
+        ntp_result(state, -1);
     }
 }
 
@@ -70,10 +69,11 @@ static void ntp_recv(void *arg, struct udp_pcb *pcb, struct pbuf *p, const ip_ad
         uint32_t seconds_since_1900 = seconds_buf[0] << 24 | seconds_buf[1] << 16 | seconds_buf[2] << 8 | seconds_buf[3];
         uint32_t seconds_since_1970 = seconds_since_1900 - NTP_DELTA;
         time_t epoch = seconds_since_1970;
-        ntp_result(state, 0, &epoch);
+        state->epoch = epoch;
+        ntp_result(state, 0);
     } else {
         printf("invalid ntp response\n");
-        ntp_result(state, -1, NULL);
+        ntp_result(state, -1);
     }
     pbuf_free(p);
 }
@@ -122,7 +122,7 @@ NTP_T* query_ntp() {
             ntp_request(state); // Cached result
         } else if (err != ERR_INPROGRESS) { // ERR_INPROGRESS means expect a callback
             printf("dns request failed\n");
-            ntp_result(state, -1, NULL);
+            ntp_result(state, -1);
         }
     }
 
