@@ -112,7 +112,7 @@ int main()
         ticks++;
         total_ticks++;
 
-        if (ticks == 30)
+        if (ticks == 60)
         {
             // Connect WIFI
             block_until_wifi_connected(ssid, pass, 60000);
@@ -134,6 +134,6 @@ int main()
                 }
             } });
         }
-        sleep_ms(1000);
+        sleep_ms(60000);
     }
 }
