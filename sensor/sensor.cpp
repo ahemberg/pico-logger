@@ -8,8 +8,6 @@ bool Sensor::post_measurements(uint8_t n, std::string server_address, uint16_t p
     std::cout << measurements.size() << std::endl;
 
     if (!post_to_influx(server_address, port, database, username, password, to_payload(measurements_to_send))) {
-    //if (false) {
-        //TODO: figure out which messages that failed
         push_all(measurements_to_send);
         return false;
     }

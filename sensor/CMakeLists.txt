@@ -4,10 +4,13 @@ set(FILES
    ${CMAKE_CURRENT_SOURCE_DIR}/dht22.cpp
    ${CMAKE_CURRENT_SOURCE_DIR}/measurement.cpp
    ${CMAKE_CURRENT_SOURCE_DIR}/sensor.cpp
+   ${CMAKE_CURRENT_SOURCE_DIR}/system.cpp
    ${CMAKE_CURRENT_SOURCE_DIR}/datapoint.hpp
    ${CMAKE_CURRENT_SOURCE_DIR}/dht22.hpp
    ${CMAKE_CURRENT_SOURCE_DIR}/measurement.hpp
    ${CMAKE_CURRENT_SOURCE_DIR}/sensor.hpp
+   ${CMAKE_CURRENT_SOURCE_DIR}/system.hpp
+
 )
 
 add_library(sensor INTERFACE)

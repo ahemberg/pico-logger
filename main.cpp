@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <iostream>
+#include <algorithm>
 
 #include "pico/stdlib.h"
 #include "pico/cyw43_arch.h"
@@ -7,22 +8,10 @@
 #include "hardware/gpio.h"
 #include "secrets.hpp"
 #include "sensor/dht22.hpp"
+#include "sensor/system.hpp"
+
 #include "network/timeutils.hpp"
 #include "influx/influxclient.hpp"
-
-#include <malloc.h>
-
-uint32_t getTotalHeap(void) {
-   extern char __StackLimit, __bss_end__;
-   
-   return &__StackLimit  - &__bss_end__;
-}
-
-uint32_t getFreeHeap(void) {
-   struct mallinfo m = mallinfo();
-
-   return getTotalHeap() - m.uordblks;
-}
 
 char ssid[] = WIFI_SSID;
 char pass[] = WIFI_PASS;
@@ -68,7 +57,7 @@ void block_until_wifi_connected(char *ssid, char *pass, uint32_t timeout)
     while (!connect_wifi(ssid, pass))
     {
         std::cout << "Failed toconnect to Wifi. Will retry in " << delay_backoff / 1000 << " seconds" << std::endl;
-        sleep_ms(delay_backoff); //todo: should be a deep sleep after a couple of retries.
+        sleep_ms(delay_backoff); // todo: should be a deep sleep after a couple of retries.
         if (timeout != 0 && time_waited >= timeout)
         {
             return;
@@ -85,7 +74,7 @@ void block_until_rtc_updated(uint32_t timeout)
     while (!update_rtc_from_ntp())
     {
         std::cout << "Failed to update RTC. Will retry in " << delay_backoff / 1000 << " seconds" << std::endl;
-        sleep_ms(delay_backoff); //Todo: this must be a deep sleep after a couple of tries
+        sleep_ms(delay_backoff); // Todo: this must be a deep sleep after a couple of tries
         if (timeout != 0 && time_waited >= timeout)
         {
             return;
@@ -93,10 +82,11 @@ void block_until_rtc_updated(uint32_t timeout)
         delay_backoff += 10000;
     }
 }
+uint32_t total_ticks = 0;
 
 int main()
 {
-    Dht22 dht_sensor = Dht22("pico_dev", 15);
+    std::list<Sensor *> sensors = {new Dht22("pico_dev", 15), new System("pico_dev")};
 
     stdio_init_all();
 
@@ -114,37 +104,35 @@ int main()
 
     while (true)
     {
-        std::cout << "Ticks: " << ticks << std::endl;
-        //std::cout << dht_sensor.to_payload() << std::endl;
-        std::cout << "Total HEAP: " << getTotalHeap() << " Free HEAP: " << getFreeHeap() << std::endl;
-        dht_sensor.measure(); // Todo: only works once if code compiled in release mode
+        std::cout << "Ticks: " << ticks << " Total ticks: " << total_ticks << " Mem: " << System::getFreeHeap() << std::endl;
+
+        std::for_each(sensors.begin(), sensors.end(), [&](Sensor *s)
+                      { s->measure(); });
+
         ticks++;
+        total_ticks++;
 
         if (ticks == 60)
         {
-            uint8_t failed_attempts = 0;
-
             // Connect WIFI
             block_until_wifi_connected(ssid, pass, 60000);
-            //TODO: If wifi conncected()
-            while (dht_sensor.has_measurements() && failed_attempts < 5)
-            {
-                std::cout << "Total HEAP: " << getTotalHeap() << " Free HEAP: " << getFreeHeap() << std::endl;
 
-                if (dht_sensor.post_measurements(20, INFLUX_SERVER, INFLUX_PORT, INFLUX_DATABASE, INFLUX_USER, INFLUX_PASSWORD))
+            std::for_each(sensors.begin(), sensors.end(), [&](Sensor *s)
+                          {
+                uint8_t failed_attempts = 0;
+                while(s->has_measurements() && failed_attempts < 5) {
+                // s.measure() add this call to get datapoints during transfer. 
+    
+                if (s->post_measurements(20, INFLUX_SERVER, INFLUX_PORT, INFLUX_DATABASE, INFLUX_USER, INFLUX_PASSWORD))
                 {
                     std::cout << "Sending data success!" << std::endl;
-                }
-                else
+                } else
                 {
-                    //TODO Two failures in a row crashes the program. But only if dns resolves.
+                    // TODO Two failures in a row crashes the program. But only if dns resolves.
                     std::cout << "Failed to send data!" << std::endl;
                     failed_attempts++;
                 }
-                sleep_ms(10000);
-            }
-            disconnect_wifi();
-            ticks = 0;
+            } });
         }
         sleep_ms(60000);
     }
