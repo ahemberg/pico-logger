@@ -1,7 +1,7 @@
 #ifndef SENSOR_HPP 
 #define SENSOR_HPP
 
-#define MAX_MEASUREMENTS 600
+#define MAX_MEASUREMENTS 1000
 
 #include <string>
 #include <iostream>
