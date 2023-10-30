@@ -66,29 +66,16 @@ static err_t tls_client_recv(void *arg, struct altcp_pcb *pcb, struct pbuf *p, e
         return tls_client_close(state);
     }
 
-    if (p->tot_len > 0) {     
-        uint32_t data_len = p->tot_len;
-        //char buf[data_len + 1];
-        uint8_t inc = 10;
-        char buf2[inc+1];
-        uint32_t cursor = 0;
-        std::ostringstream os;
-        while (cursor < data_len) {  
-            if ((cursor + inc) <= data_len) {
-                pbuf_copy_partial(p, buf2, inc, cursor);
-                buf2[inc+1] = 0;
-            } else {
-                for (uint8_t n = 0; n < inc+1; n++) {
-                    buf2[n] = 0;
-                }
-                pbuf_copy_partial(p, buf2, (data_len - cursor), cursor);
-            }
-            os << buf2;
-            printf("%s", buf2);
-            cursor += inc;
-        } 
 
-        state->server_response = os.str();
+    //Only copies the first N characters of the response. All we care about is the HTTP header and the response code.
+    //This will be something like the first 50 bytes of the response. Therefore never return more
+
+    if (p->tot_len > 0) {    
+
+        char buf[200];
+        pbuf_copy_partial(p, buf, 199, 0);
+        buf[200] = 0;
+        state->server_response = &buf[0];
         altcp_recved(pcb, p->tot_len);
         tls_client_close(state);
     }
@@ -188,7 +175,7 @@ static TLS_CLIENT_T* tls_client_init(void) {
 }
 
 //TODO: This crashes if the server has influxdb off. Probably crashes if server is down too
-std::string send_tls_request(std::string server, std::string request, uint16_t port, int timeout) {
+bool send_tls_request(std::string server, std::string request, uint16_t port, int timeout, char *response) {
 
     tls_config = altcp_tls_create_config_client(NULL, 0);
     assert(tls_config);
@@ -196,21 +183,25 @@ std::string send_tls_request(std::string server, std::string request, uint16_t p
     TLS_CLIENT_T *state = tls_client_init();
     if (!state) {
         std::cout << "Returning NULL. Will we crash?" << std::endl;
-        return NULL; //TODO better way of representing error 
+        free(state);
+        return false; //TODO better way of representing error 
     }
     state->http_request = request.c_str();
     state->timeout = timeout;
     if (!tls_client_open(server.c_str(), port, state)) {
         std::cout << "Returning NULL. Will we crash?" << std::endl;
-        return NULL; //TODO better way of representing error
+        free(state);
+        return false; //TODO better way of representing error
     }
     while(!state->complete) {
         cyw43_arch_poll();
         cyw43_arch_wait_for_work_until(make_timeout_time_ms(1000));
     }
     int err = state->error;
-    std::string server_response = state->server_response;
+
+    memcpy(response, state->server_response, 200);
     free(state);
+
     altcp_tls_free_config(tls_config);
-    return server_response;
+    return true;
 }

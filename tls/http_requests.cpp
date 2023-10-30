@@ -20,9 +20,20 @@ HTTPResponse HTTPRequest::post(std::string url, std::string data, std::map<std::
 
     std::cout << "Posting: " << std::endl;
     std::cout << os.str() << std::endl;
-    std::string raw_response = send_tls_request(extract_host(url, false), os.str(), extract_port(url), TLS_CLIENT_TIMEOUT_SECS);
-    HTTPResponse response = HTTPResponse(raw_response);
-    return response;
+    
+    
+
+    char raw_response[200];
+    char *p;
+    p = raw_response;
+    
+
+    if(send_tls_request(extract_host(url, false), os.str(), extract_port(url), TLS_CLIENT_TIMEOUT_SECS, p)) {
+        std::string server_response(p);
+        return HTTPResponse(server_response);
+    } else {
+        return HTTPResponse("");
+    }
 }
 
 std::string HTTPRequest::extract_host(std::string url, bool include_port) {

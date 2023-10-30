@@ -14,13 +14,16 @@
 #include "lwip/altcp_tls.h"
 #include "lwip/dns.h"
 
+//TODO : There is a memory leak hidden somewhere here
+//TODO : The leak appears to be caused by server_response.
+
 typedef struct TLS_CLIENT_T_ {
     struct altcp_pcb *pcb;
     bool complete;
     int error;
     const char *http_request;
     int timeout;
-    std::string server_response;
+    char  *server_response;
 } TLS_CLIENT_T;
 
 static struct altcp_tls_config *tls_config = NULL;
@@ -44,6 +47,6 @@ static bool tls_client_open(const char *hostname, const uint16_t port, void *arg
 // Perform initialisation
 static TLS_CLIENT_T* tls_client_init(void);
 
-std::string send_tls_request(std::string server, std::string request, uint16_t port, int timeout);
+bool send_tls_request(std::string server, std::string request, uint16_t port, int timeout, char *response);
 
 #endif
