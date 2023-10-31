@@ -133,6 +133,7 @@ int main()
                     failed_attempts++;
                 }
             } });
+            ticks = 0;
         }
         sleep_ms(60000);
     }
